@@ -1,5 +1,5 @@
 import React from 'react';
-import { DashboardIcon, BrowseIcon, ListSpaceIcon, MyBookingsIcon, ProfileIcon, LogoutIcon } from './Icons';
+import { DashboardIcon, BrowseIcon, ListSpaceIcon, MyBookingsIcon, ProfileIcon, LogoutIcon, UsersIcon } from './Icons';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
@@ -9,18 +9,23 @@ const NAV_ITEMS = [
   { id: 'profile', label: 'Profile', icon: ProfileIcon },
 ];
 
-function Sidebar({ activeTab, onTabChange, onLogout, userName }) {
+function Sidebar({ activeTab, onTabChange, onLogout, userName, isAdmin, onAdminUsers }) {
+  const items = isAdmin
+    ? [...NAV_ITEMS, { id: 'users', label: 'Users', icon: UsersIcon }]
+    : NAV_ITEMS;
+
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">SlotShare</div>
       <nav className="sidebar-nav">
-        {NAV_ITEMS.map(item => {
+        {items.map(item => {
           const Icon = item.icon;
+          const handleClick = item.id === 'users' ? (onAdminUsers || (() => {})) : () => onTabChange(item.id);
           return (
             <button
               key={item.id}
               className={`sidebar-nav-item ${activeTab === item.id ? 'active' : ''}`}
-              onClick={() => onTabChange(item.id)}
+              onClick={handleClick}
             >
               <Icon /> {item.label}
             </button>

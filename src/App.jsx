@@ -5,20 +5,34 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
-import { getUserFromToken, removeToken } from './services/api';
+import { getUserFromToken, removeToken, authAPI } from './services/api';
 
 function App() {
-  const [page, setPage] = useState("home"); // home | login | signup | dashboard | admin
+  const [page, setPage] = useState("home");
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Check for existing session on mount
+  // Check for existing session on mount — always resolve from /auth/me
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      const user = getUserFromToken();
-      if (user) {
-        setCurrentUser(user);
-        setPage(user.role === 'admin' ? 'admin' : 'dashboard');
+      const decoded = getUserFromToken();
+      if (decoded) {
+        authAPI.getCurrentUser()
+          .then(res => {
+            if (res.success && res.user) {
+              setCurrentUser(res.user);
+              setPage(res.user.role === 'admin' ? 'admin' : 'dashboard');
+              return;
+            }
+            removeToken();
+            setCurrentUser(null);
+            setPage('home');
+          })
+          .catch(() => {
+            removeToken();
+            setCurrentUser(null);
+            setPage('home');
+          });
       } else {
         removeToken();
       }
@@ -55,8 +69,8 @@ function App() {
       {page === "home" && <HomePage onLogin={() => setPage("login")} onSignup={() => setPage("signup")} />}
       {page === "login" && <LoginPage onLogin={handleLogin} onSignup={() => setPage("signup")} onBack={() => setPage("home")} />}
       {page === "signup" && <SignupPage onSignup={handleSignup} onLogin={() => setPage("login")} onBack={() => setPage("home")} />}
-      {page === "dashboard" && <UserDashboard onLogout={handleLogout} user={currentUser} />}
-      {page === "admin" && <AdminDashboard onLogout={handleLogout} user={currentUser} />}
+  {page === "dashboard" && <UserDashboard onLogout={handleLogout} user={currentUser} isAdmin={currentUser?.role === 'admin'} onAdminUsers={() => setPage("admin")} />}
+  {page === "admin" && <AdminDashboard onLogout={handleLogout} user={currentUser} />}
     </>
   );
 }

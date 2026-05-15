@@ -28,6 +28,9 @@ const request = async (endpoint, options = {}) => {
     return data;
   } catch (error) {
     console.error('API Error:', error);
+    if (error instanceof TypeError) {
+      throw new Error('Unable to connect to server. Please ensure the backend is running on port 5000.');
+    }
     throw error;
   }
 };

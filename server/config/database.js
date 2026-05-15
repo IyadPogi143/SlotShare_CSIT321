@@ -88,8 +88,8 @@ export const initializeDatabase = async () => {
       
       console.log('✅ Database schema initialized successfully');
       
-      // Create default admin user if not exists
-      await createDefaultAdmin();
+// Create default users if not exists
+       await createDefaultUsers();
       
       return true;
     } else {
@@ -102,43 +102,57 @@ export const initializeDatabase = async () => {
   }
 };
 
-// Create default admin user
-const createDefaultAdmin = async () => {
+// Create default users (admin + demo)
+const createDefaultUsers = async () => {
   try {
-    const bcrypt = await import('bcryptjs');
+    const bcrypt = (await import('bcryptjs')).default;
+
+    // --- Admin user ---
     const adminEmail = 'admin@slotshare.com';
     const adminPassword = 'admin123';
     const expectedHash = '$2a$10$YourHashedPasswordHere';
 
-    // Check if admin exists
-    const existing = await query('SELECT id, password_hash FROM users WHERE email = ?', [adminEmail]);
+    const existingAdmin = await query('SELECT id, password_hash FROM users WHERE email = ?', [adminEmail]);
+    const freshAdminHash = await bcrypt.hash(adminPassword, 10);
 
-    const freshHash = await bcrypt.hash(adminPassword, 10);
-
-    if (existing.length === 0) {
-      // Admin doesn't exist — create fresh
+    if (existingAdmin.length === 0) {
       await query(
-        `INSERT INTO users (email, password_hash, first_name, last_name, role, status) 
+        `INSERT INTO users (email, password_hash, first_name, last_name, role, status)
          VALUES (?, ?, ?, ?, 'admin', 'active')`,
-        [adminEmail, freshHash, 'Admin', 'User']
+        [adminEmail, freshAdminHash, 'Admin', 'User']
       );
       console.log('✅ Default admin user created (email: admin@slotshare.com, password: admin123)');
     } else {
-      // Admin already exists — fix the password if it's the placeholder or doesn't match
-      const currentHash = existing[0].password_hash;
+      const currentHash = existingAdmin[0].password_hash;
       const isPlaceholder = currentHash === expectedHash;
       const isInvalid = !(await bcrypt.compare(adminPassword, currentHash));
 
       if (isPlaceholder || isInvalid) {
         await query(
           'UPDATE users SET password_hash = ? WHERE id = ?',
-          [freshHash, existing[0].id]
+          [freshAdminHash, existingAdmin[0].id]
         );
         console.log('✅ Default admin password reset to "admin123"');
       }
     }
+
+    // --- Demo user (shown on login page) ---
+    const demoEmail = 'user@slotshare.com';
+    const demoPassword = 'password';
+
+    const existingDemo = await query('SELECT id FROM users WHERE email = ?', [demoEmail]);
+    const freshDemoHash = await bcrypt.hash(demoPassword, 10);
+
+    if (existingDemo.length === 0) {
+      await query(
+        `INSERT INTO users (email, password_hash, first_name, last_name, role, status)
+         VALUES (?, ?, ?, ?, 'user', 'active')`,
+        [demoEmail, freshDemoHash, 'Demo', 'User']
+      );
+      console.log('✅ Default demo user created (email: user@slotshare.com, password: password)');
+    }
   } catch (error) {
-    console.warn('⚠️  Could not create/reset default admin:', error.message);
+    console.warn('⚠️  Could not create default users:', error.message);
   }
 };
 

@@ -29,7 +29,11 @@ function LoginPage({ onLogin, onSignup, onBack }) {
       }
     } catch (apiError) {
       console.error('Login error:', apiError);
-      setError(apiError.message || "Invalid credentials. Please try again.");
+      if (apiError.message.includes('Unable to connect to server')) {
+        setError('Server is not running. Please start the backend server (npm run dev in server folder).');
+      } else {
+        setError(apiError.message || "Login failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -93,15 +97,6 @@ function LoginPage({ onLogin, onSignup, onBack }) {
           </button>
           <div className="auth-divider"><span>or</span></div>
           <p className="auth-switch">Don't have an account? <button onClick={onSignup}>Sign up free</button></p>
-          
-          {/* Demo credentials hint */}
-          <div style={{ marginTop: 16, padding: 12, background: 'var(--surface)', borderRadius: 8, border: '1px solid var(--border)' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>Demo Credentials:</p>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)' }}>
-              Admin: admin@slotshare.com / admin123<br/>
-              User: user@slotshare.com / password
-            </p>
-          </div>
         </div>
       </div>
     </div>

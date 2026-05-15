@@ -11,7 +11,9 @@ const router = express.Router();
 // @access  Private/Admin
 router.get('/', authenticate, requireAdmin, async (req, res) => {
   try {
-    const { search, role, status, page = 1, limit = 20 } = req.query;
+    const { search, role, status, page: qPage = 1, limit: qLimit = 20 } = req.query;
+    const page = parseInt(qPage, 10);
+    const limit = parseInt(qLimit, 10);
     const offset = (page - 1) * limit;
 
     let whereClause = '1=1';
@@ -34,11 +36,11 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
     }
 
     // Get total count
-    const [countResult] = await query(
+    const countResult = await query(
       `SELECT COUNT(*) as total FROM users WHERE ${whereClause}`,
       params
     );
-    const total = countResult[0].total;
+    const total = countResult.total;
 
     // Get users
     const users = await query(

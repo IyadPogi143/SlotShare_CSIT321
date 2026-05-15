@@ -15,16 +15,16 @@ const PORT = process.env.PORT || 5000;
 
 // Initialize database
 let dbInitialized = false;
-initializeDatabase().then((initialized) => {
-  dbInitialized = initialized;
+try {
+  dbInitialized = await initializeDatabase();
   if (dbInitialized) {
     console.log('✅ Database initialized successfully');
   } else {
     console.log('⚠️  Database initialization failed, continuing without database...');
   }
-}).catch((err) => {
+} catch (err) {
   console.error('❌ Database initialization error:', err);
-});
+}
 
 // Middleware
 app.use(helmet()); // Security headers

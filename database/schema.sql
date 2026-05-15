@@ -87,24 +87,8 @@ CREATE TABLE IF NOT EXISTS audit_log (
     INDEX idx_created_at (created_at)
 );
 
--- Insert default admin user (password: admin123)
--- Note: In production, use proper password hashing
-INSERT INTO users (email, password_hash, first_name, last_name, role, status) 
-VALUES (
-    'admin@slotshare.com',
-    '$2a$10$YourHashedPasswordHere',
-    'Admin',
-    'User',
-    'admin',
-    'active'
-) ON DUPLICATE KEY UPDATE email = email;
-
--- Insert sample users for testing
-INSERT INTO users (email, password_hash, first_name, last_name, role, status, phone, address, license_plate, vehicle_model, vehicle_color) 
-VALUES 
-    ('juan@example.com', '$2a$10$HashedPassword1', 'Juan', 'Dela Cruz', 'user', 'active', '+63 917 123 4567', 'Cebu City, Philippines', 'ABC 1234', 'Toyota Vios', 'Silver'),
-    ('maria@example.com', '$2a$10$HashedPassword2', 'Maria', 'Santos', 'user', 'active', '+63 918 234 5678', 'Mactan, Cebu', 'XYZ 5678', 'Honda City', 'White')
-ON DUPLICATE KEY UPDATE email = email;
+-- Admin user created by application code with proper bcrypt hash
+-- See: server/config/database.js createDefaultAdmin()
 
 -- Insert sample listings
 INSERT INTO listings (user_id, name, address, description, price_per_hour, total_slots, available_slots, status, amenities, rules)

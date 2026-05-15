@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ParkingIcon, BookingsIcon, OverviewIcon, LogoutIcon } from '../components/Icons';
-import { usersAPI } from '../services/api';
+import { usersAPI, authAPI } from '../services/api';
 import Toast from '../components/Toast';
 import Modal from '../components/Modal';
 
@@ -31,27 +31,18 @@ function AdminDashboard({ onLogout, user }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({});
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addFormData, setAddFormData] = useState({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    role: 'user',
+    adminCode: '',
+  });
 
   const showToast = (message) => setToast(message);
-
-  const getDemoUsers = () => [
-    { id: 1, email: 'admin@slotshare.com', firstName: 'Admin', lastName: 'User', role: 'admin', status: 'active', phone: '+63 917 000 0000', createdAt: '2026-01-01T00:00:00Z', lastLogin: '2026-05-15T08:00:00Z' },
-    { id: 2, email: 'juan@example.com', firstName: 'Juan', lastName: 'Dela Cruz', role: 'user', status: 'active', phone: '+63 917 123 4567', createdAt: '2026-02-15T00:00:00Z', lastLogin: '2026-05-14T10:30:00Z' },
-    { id: 3, email: 'maria@example.com', firstName: 'Maria', lastName: 'Santos', role: 'user', status: 'active', phone: '+63 918 234 5678', createdAt: '2026-03-10T00:00:00Z', lastLogin: '2026-05-13T15:45:00Z' },
-    { id: 4, email: 'pedro@example.com', firstName: 'Pedro', lastName: 'Reyes', role: 'user', status: 'inactive', phone: '+63 919 345 6789', createdAt: '2026-04-05T00:00:00Z', lastLogin: '2026-04-20T09:00:00Z' },
-    { id: 5, email: 'ana@example.com', firstName: 'Ana', lastName: 'Torres', role: 'user', status: 'suspended', phone: '+63 920 456 7890', createdAt: '2026-04-20T00:00:00Z', lastLogin: '2026-05-01T12:00:00Z' },
-  ];
-
-  const getDemoStats = () => ({
-    totalUsers: 5,
-    adminCount: 1,
-    userCount: 4,
-    activeUsers: 3,
-    inactiveUsers: 1,
-    suspendedUsers: 1,
-    activeThisWeek: 3,
-    activeThisMonth: 4
-  });
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -71,7 +62,6 @@ function AdminDashboard({ onLogout, user }) {
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      setUsers(getDemoUsers());
     } finally {
       setLoading(false);
     }
@@ -85,7 +75,6 @@ function AdminDashboard({ onLogout, user }) {
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
-      setStats(getDemoStats());
     }
   };
 
@@ -102,8 +91,7 @@ function AdminDashboard({ onLogout, user }) {
       fetchStats();
     } catch (error) {
       console.error('Error updating user:', error);
-      setUsers(users.map(u => u.id === userId ? { ...u, status: newStatus } : u));
-      showToast(`User ${newStatus} (demo mode)`);
+      showToast(error.message || 'Failed to update user');
     }
   };
 
@@ -118,8 +106,7 @@ function AdminDashboard({ onLogout, user }) {
       fetchStats();
     } catch (error) {
       console.error('Error deleting user:', error);
-      setUsers(users.filter(u => u.id !== userId));
-      showToast('User deleted (demo mode)');
+      showToast(error.message || 'Failed to delete user');
     }
   };
 
@@ -141,11 +128,38 @@ function AdminDashboard({ onLogout, user }) {
       showToast('User updated successfully');
       setShowEditModal(false);
       fetchUsers();
+      fetchStats();
     } catch (error) {
       console.error('Error updating user:', error);
-      setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...editFormData } : u));
-      showToast('User updated (demo mode)');
+      showToast(error.message || 'Failed to save changes');
       setShowEditModal(false);
+    }
+  };
+
+  const handleAddUser = async () => {
+    try {
+      const userData = {
+        email: addFormData.email,
+        password: addFormData.password,
+        firstName: addFormData.firstName,
+        lastName: addFormData.lastName,
+        phone: addFormData.phone || undefined,
+        role: addFormData.role,
+      };
+
+      if (addFormData.role === 'admin' && addFormData.adminCode) {
+        userData.adminCode = addFormData.adminCode;
+      }
+
+      const response = await authAPI.register(userData);
+      showToast(response.message || 'User created successfully');
+      setShowAddModal(false);
+      setAddFormData({ email: '', password: '', firstName: '', lastName: '', phone: '', role: 'user', adminCode: '' });
+      fetchUsers();
+      fetchStats();
+    } catch (error) {
+      console.error('Error creating user:', error);
+      showToast(error.message || 'Failed to create user');
     }
   };
 
@@ -287,7 +301,8 @@ function AdminDashboard({ onLogout, user }) {
                     <option value="inactive">Inactive</option>
                     <option value="suspended">Suspended</option>
                   </select>
-                  <select className="form-select" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} style={{ width: 120 }}>
+                  <button className="btn-add" onClick={() => { setAddFormData({ email: '', password: '', firstName: '', lastName: '', phone: '', role: 'user', adminCode: '' }); setShowAddModal(true); }}>+ Add User</button>
+                   <select className="form-select" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} style={{ width: 120 }}>
                     <option value="all">All Roles</option>
                     <option value="admin">Admin</option>
                     <option value="user">User</option>
@@ -397,6 +412,46 @@ function AdminDashboard({ onLogout, user }) {
               <option value="suspended">Suspended</option>
             </select>
           </div>
+        </Modal>
+      )}
+
+      {showAddModal && (
+        <Modal title="Add User" onClose={() => setShowAddModal(false)} onConfirm={handleAddUser} confirmLabel="Create User">
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input className="form-input" type="email" value={addFormData.email} onChange={(e) => setAddFormData({ ...addFormData, email: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <input className="form-input" type="password" value={addFormData.password} onChange={(e) => setAddFormData({ ...addFormData, password: e.target.value })} />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">First Name</label>
+              <input className="form-input" value={addFormData.firstName} onChange={(e) => setAddFormData({ ...addFormData, firstName: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Last Name</label>
+              <input className="form-input" value={addFormData.lastName} onChange={(e) => setAddFormData({ ...addFormData, lastName: e.target.value })} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Phone</label>
+            <input className="form-input" value={addFormData.phone} onChange={(e) => setAddFormData({ ...addFormData, phone: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Role</label>
+            <select className="form-select" value={addFormData.role} onChange={(e) => setAddFormData({ ...addFormData, role: e.target.value })}>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          {addFormData.role === 'admin' && (
+            <div className="form-group">
+              <label className="form-label">Admin Code</label>
+              <input className="form-input" type="password" value={addFormData.adminCode} onChange={(e) => setAddFormData({ ...addFormData, adminCode: e.target.value })} placeholder="Enter admin code" />
+            </div>
+          )}
         </Modal>
       )}
 

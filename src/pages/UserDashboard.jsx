@@ -8,7 +8,7 @@ import Toast from '../components/Toast';
 import { authAPI } from '../services/api';
 import { INITIAL_BOOKINGS, INITIAL_LISTINGS } from '../data';
 
-function UserDashboard({ onLogout, user: currentUser }) {
+function UserDashboard({ onLogout, user: currentUser, isAdmin, onAdminUsers }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [userBookings, setUserBookings] = useState(INITIAL_BOOKINGS);
   const [userListings, setUserListings] = useState(INITIAL_LISTINGS);
@@ -256,6 +256,8 @@ function UserDashboard({ onLogout, user: currentUser }) {
         onTabChange={setActiveTab}
         onLogout={onLogout}
         userName={user.firstName}
+        isAdmin={isAdmin}
+        onAdminUsers={onAdminUsers}
       />
       <main className="user-dashboard-main">
         {renderContent()}
