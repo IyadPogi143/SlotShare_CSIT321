@@ -1,0 +1,1 @@
+# Slot_Share_Version1.0
