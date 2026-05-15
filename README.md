@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SlotShare - Parking Space Management System
 
 A full-stack web application for managing and booking parking spaces in Cebu City.
@@ -162,3 +163,6 @@ SlotShare/
 ## License
 
 MIT License
+=======
+# Slot_Share_Version1.0
+>>>>>>> c2abe9284a7c47298f1734c3ba9ba561ca4f8418
