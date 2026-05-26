@@ -308,7 +308,8 @@ router.get('/stats/summary', authenticate, requireAdmin, async (req, res) => {
       SELECT 
         COUNT(*) as totalUsers,
         COUNT(CASE WHEN role = 'admin' THEN 1 END) as adminCount,
-        COUNT(CASE WHEN role = 'user' THEN 1 END) as userCount,
+        COUNT(CASE WHEN role = 'driver' THEN 1 END) as driverCount,
+        COUNT(CASE WHEN role = 'owner' THEN 1 END) as ownerCount,
         COUNT(CASE WHEN status = 'active' THEN 1 END) as activeUsers,
         COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactiveUsers,
         COUNT(CASE WHEN status = 'suspended' THEN 1 END) as suspendedUsers,
