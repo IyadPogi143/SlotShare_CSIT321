@@ -1,6 +1,20 @@
 import jwt from 'jsonwebtoken';
 import { query } from '../config/database.js';
 
+export const requireOwner = (req, res, next) => {
+  if (req.user.role !== 'owner' && req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Owner access required' });
+  }
+  next();
+};
+
+export const requireDriver = (req, res, next) => {
+  if (req.user.role !== 'driver' && req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Driver access required' });
+  }
+  next();
+};
+
 export const authenticate = async (req, res, next) => {
   try {
     // Get token from header
