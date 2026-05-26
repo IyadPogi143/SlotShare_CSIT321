@@ -28,6 +28,16 @@ router.post('/register', [
     }
 
     const { email, password, firstName, lastName, phone, address, adminCode } = req.body;
+    const jwtSecret = process.env.JWT_SECRET;
+    const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '7d';
+
+    if (!jwtSecret) {
+      console.error('Missing JWT_SECRET in environment');
+      return res.status(500).json({
+        success: false,
+        message: 'Server configuration error'
+      });
+    }
 
     // Check if user exists
     const existingUsers = await query('SELECT id FROM users WHERE email = ?', [email]);
@@ -40,7 +50,8 @@ router.post('/register', [
 
     // Check admin code if provided
     const ADMIN_CODE = process.env.ADMIN_CODE;
-    let role = 'user';
+    // Accept 'driver' or 'owner' from the request body
+    let role = (req.body.role === 'owner') ? 'owner' : 'driver';
     if (adminCode && adminCode.trim() !== '') {
       if (!ADMIN_CODE) {
         return res.status(500).json({ 
@@ -71,8 +82,8 @@ router.post('/register', [
     // Create token
     const token = jwt.sign(
       { id: result.insertId, email, role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      jwtSecret,
+      { expiresIn: jwtExpiresIn }
     );
 
     res.status(201).json({
@@ -115,6 +126,16 @@ router.post('/login', [
     }
 
     const { email, password } = req.body;
+    const jwtSecret = process.env.JWT_SECRET;
+    const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '7d';
+
+    if (!jwtSecret) {
+      console.error('Missing JWT_SECRET in environment');
+      return res.status(500).json({
+        success: false,
+        message: 'Server configuration error'
+      });
+    }
 
     // Get user
     const users = await query('SELECT * FROM users WHERE email = ?', [email]);
@@ -150,8 +171,8 @@ router.post('/login', [
     // Create token
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      jwtSecret,
+      { expiresIn: jwtExpiresIn }
     );
 
     res.json({
