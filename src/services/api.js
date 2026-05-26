@@ -53,6 +53,63 @@ export const authAPI = {
     request('/auth/me'),
 };
 
+// Listings API
+export const listingsAPI = {
+  // Public — browse all active listings
+  getAll: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return request(`/listings${queryString ? `?${queryString}` : ''}`);
+  },
+
+  getById: (id) =>
+    request(`/listings/${id}`),
+
+  // Owner — get only MY listings (any status)
+  getMyListings: () =>
+    request('/listings/my'),
+
+  create: (data) =>
+    request('/listings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id, data) =>
+    request(`/listings/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id) =>
+    request(`/listings/${id}`, { method: 'DELETE' }),
+};
+
+// Bookings API
+export const bookingsAPI = {
+  // Driver — bookings I made
+  getMyBookings: () =>
+    request('/bookings/as-renter'),
+
+  // Owner — bookings on my listings
+  getIncomingBookings: () =>
+    request('/bookings/as-owner'),
+
+  create: (data) =>
+    request('/bookings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  accept: (id) =>
+    request(`/bookings/${id}/accept`, { method: 'PATCH' }),
+
+  reject: (id) =>
+    request(`/bookings/${id}/reject`, { method: 'PATCH' }),
+
+  cancel: (id) =>
+    request(`/bookings/${id}/cancel`, { method: 'PATCH' }),
+};
+
 // Users API (Admin)
 export const usersAPI = {
   getAll: (params = {}) => {
@@ -82,6 +139,43 @@ export const usersAPI = {
 
   getStats: () => 
     request('/users/stats/summary'),
+};
+
+// Admin Bookings API
+export const adminBookingsAPI = {
+  // GET /api/admin/bookings — all bookings with driver + listing info, filterable
+  getAll: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return request(`/admin/bookings${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // PATCH /api/admin/bookings/:id/status — set status manually
+  updateStatus: (id, status) =>
+    request(`/admin/bookings/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+
+  // DELETE /api/admin/bookings/:id
+  delete: (id) =>
+    request(`/admin/bookings/${id}`, { method: 'DELETE' }),
+};
+
+// Admin Listings API (from previous session)
+export const adminListingsAPI = {
+  getAll: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return request(`/admin/listings${queryString ? `?${queryString}` : ''}`);
+  },
+
+  updateStatus: (id, status) =>
+    request(`/admin/listings/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+
+  delete: (id) =>
+    request(`/admin/listings/${id}`, { method: 'DELETE' }),
 };
 
 // Utility functions
@@ -120,6 +214,10 @@ export const getUserFromToken = () => {
 export default {
   auth: authAPI,
   users: usersAPI,
+  listings: listingsAPI,
+  bookings: bookingsAPI,
+  adminListings: adminListingsAPI,
+  adminBookings: adminBookingsAPI,
   setToken,
   removeToken,
   isAuthenticated,
