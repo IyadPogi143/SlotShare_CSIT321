@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
     address TEXT,
-    role ENUM('admin', 'user') NOT NULL DEFAULT 'user',
+    role ENUM('admin', 'driver', 'owner') NOT NULL DEFAULT 'driver',
     status ENUM('active', 'inactive', 'suspended') NOT NULL DEFAULT 'active',
     license_plate VARCHAR(20),
     vehicle_model VARCHAR(100),
