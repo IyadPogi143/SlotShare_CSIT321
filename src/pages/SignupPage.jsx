@@ -11,7 +11,8 @@ function SignupPage({ onSignup, onLogin, onBack }) {
     confirmPassword: '',
     phone: '',
     address: '',
-    adminCode: ''
+    adminCode: '',
+    role: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -22,11 +23,16 @@ function SignupPage({ onSignup, onLogin, onBack }) {
   };
 
   const handleSignup = async () => {
-    const { firstName, lastName, email, password, confirmPassword, phone, address, adminCode } = formData;
+    const { firstName, lastName, email, password, confirmPassword, phone, address, adminCode, role } = formData;
     
     if (!firstName || !lastName || !email || !password) { 
       setError("Please fill in all required fields."); 
       return; 
+    }
+
+    if (!role) {                                          
+      setError("Please select an account type.");
+      return;
     }
 
     if (password !== confirmPassword) {
@@ -50,7 +56,8 @@ function SignupPage({ onSignup, onLogin, onBack }) {
         password,
         phone,
         address,
-        adminCode
+        adminCode,
+        role
       });
       
       if (response.success) {
@@ -91,7 +98,55 @@ function SignupPage({ onSignup, onLogin, onBack }) {
             <p className="auth-subtitle">Get started with SlotShare today</p>
           </div>
           {error && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--danger)', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 6, padding: '10px 14px' }}>{error}</div>}
-          
+          <div className="form-group">
+            <label className="form-label">I am a <span style={{ color: 'var(--danger)' }}>*</span></label>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, role: 'driver' }))}
+                style={{
+                  flex: 1,
+                  padding: '12px 8px',
+                  border: `2px solid ${formData.role === 'driver' ? 'var(--primary)' : '#e2e8f0'}`,
+                  borderRadius: 8,
+                  background: formData.role === 'driver' ? 'var(--primary)' : 'white',
+                  color: formData.role === 'driver' ? 'white' : 'var(--text)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  transition: 'all 0.15s'
+                }}
+              >
+                🚗 Driver
+                <div style={{ fontSize: 11, fontWeight: 400, marginTop: 4, opacity: 0.8 }}>
+                  I want to book parking
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, role: 'owner' }))}
+                style={{
+                  flex: 1,
+                  padding: '12px 8px',
+                  border: `2px solid ${formData.role === 'owner' ? 'var(--primary)' : '#e2e8f0'}`,
+                  borderRadius: 8,
+                  background: formData.role === 'owner' ? 'var(--primary)' : 'white',
+                  color: formData.role === 'owner' ? 'white' : 'var(--text)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  transition: 'all 0.15s'
+                }}
+              >
+                🅿️ Owner
+                <div style={{ fontSize: 11, fontWeight: 400, marginTop: 4, opacity: 0.8 }}>
+                  I want to list parking
+                </div>
+              </button>
+            </div>
+          </div>
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">First Name</label>
