@@ -320,7 +320,7 @@ router.get('/stats/summary', authenticate, requireAdmin, async (req, res) => {
 
     const recentUsers = await query(`
       SELECT id, email, first_name as firstName, last_name as lastName, 
-             role, status, created_at as createdAt
+             role, status, created_at as createdAt, last_login as lastLogin
       FROM users 
       ORDER BY created_at DESC 
       LIMIT 5

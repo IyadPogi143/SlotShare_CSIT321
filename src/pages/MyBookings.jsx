@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { MyBookingsIcon } from '../components/Icons';
 import { bookingsAPI, listingsAPI } from '../services/api';
+import Modal from '../components/Modal';
 
 function MyBookings({ role, myBookings = [], incomingBookings = [], onCancelBooking, onAcceptBooking, onRejectBooking, showToast }) {
   const [filter, setFilter] = useState('all');
   const [view, setView] = useState('mine'); // 'mine' = as driver, 'incoming' = as owner
+  const [confirmModal, setConfirmModal] = useState(null); // { message, onConfirm }
 
   const activeList = role === 'owner' && view === 'incoming'
     ? incomingBookings
@@ -26,10 +28,14 @@ function MyBookings({ role, myBookings = [], incomingBookings = [], onCancelBook
   };
 
   const handleCancel = (booking) => {
-    if (window.confirm('Are you sure you want to cancel this booking?')) {
-      onCancelBooking(booking.id);
-      showToast('Booking cancelled successfully');
-    }
+    setConfirmModal({
+      message: 'Are you sure you want to cancel this booking?',
+      onConfirm: () => {
+        setConfirmModal(null);
+        onCancelBooking(booking.id);
+        showToast('Booking cancelled successfully');
+      },
+    });
   };
 
 const getBookingStats = () => {
@@ -233,6 +239,17 @@ const getBookingStats = () => {
           ))
         )}
       </div>
+      {confirmModal && (
+        <Modal
+          title="Confirm"
+          onClose={() => setConfirmModal(null)}
+          onConfirm={confirmModal.onConfirm}
+          confirmLabel="Confirm"
+          danger
+        >
+          <p>{confirmModal.message}</p>
+        </Modal>
+      )}
     </div>
   );
 }

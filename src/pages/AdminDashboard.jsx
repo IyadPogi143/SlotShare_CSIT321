@@ -48,6 +48,7 @@ function AdminDashboard({ onLogout, user }) {
   const [listingSearch, setListingSearch] = useState('');
   const [listingStatusFilter, setListingStatusFilter] = useState('all');
   const [listingPagination, setListingPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0 });
+  const [confirmModal, setConfirmModal] = useState(null); // { message, onConfirm }
 
   const showToast = (message) => setToast(message);
 
@@ -102,19 +103,22 @@ function AdminDashboard({ onLogout, user }) {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) {
-      return;
-    }
-    try {
-      await usersAPI.delete(userId);
-      showToast('User deleted successfully');
-      fetchUsers();
-      fetchStats();
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      showToast(error.message || 'Failed to delete user');
-    }
+  const handleDeleteUser = (userId) => {
+    setConfirmModal({
+      message: 'Are you sure you want to delete this user?',
+      onConfirm: async () => {
+        setConfirmModal(null);
+        try {
+          await usersAPI.delete(userId);
+          showToast('User deleted successfully');
+          fetchUsers();
+          fetchStats();
+        } catch (error) {
+          console.error('Error deleting user:', error);
+          showToast(error.message || 'Failed to delete user');
+        }
+      },
+    });
   };
 
   const handleEditUser = (userData) => {
@@ -200,15 +204,20 @@ function AdminDashboard({ onLogout, user }) {
     }
   };
 
-  const handleDeleteListing = async (id) => {
-    if (!window.confirm('Delete this listing? This cannot be undone.')) return;
-    try {
-      const response = await adminListingsAPI.delete(id);
-      showToast(response.message || 'Listing deleted');
-      fetchListings();
-    } catch (error) {
-      showToast(error.message || 'Failed to delete listing');
-    }
+  const handleDeleteListing = (id) => {
+    setConfirmModal({
+      message: 'Delete this listing? This cannot be undone.',
+      onConfirm: async () => {
+        setConfirmModal(null);
+        try {
+          const response = await adminListingsAPI.delete(id);
+          showToast(response.message || 'Listing deleted');
+          fetchListings();
+        } catch (error) {
+          showToast(error.message || 'Failed to delete listing');
+        }
+      },
+    });
   };
 
   useEffect(() => {
@@ -622,6 +631,18 @@ function AdminDashboard({ onLogout, user }) {
               <input className="form-input" type="password" value={addFormData.adminCode} onChange={(e) => setAddFormData({ ...addFormData, adminCode: e.target.value })} placeholder="Enter admin code" />
             </div>
           )}
+        </Modal>
+      )}
+
+      {confirmModal && (
+        <Modal
+          title="Confirm"
+          onClose={() => setConfirmModal(null)}
+          onConfirm={confirmModal.onConfirm}
+          confirmLabel="Confirm"
+          danger
+        >
+          <p>{confirmModal.message}</p>
         </Modal>
       )}
 
