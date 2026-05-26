@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ParkingIcon, BookingsIcon, OverviewIcon, LogoutIcon } from '../components/Icons';
-import { usersAPI, authAPI } from '../services/api';
+import { usersAPI, authAPI, adminListingsAPI } from '../services/api';
 import Toast from '../components/Toast';
 import Modal from '../components/Modal';
 
@@ -41,6 +41,13 @@ function AdminDashboard({ onLogout, user }) {
     role: 'user',
     adminCode: '',
   });
+
+  // ─── Listings state ─────────────────────────────────────────────────────────
+  const [listings, setListings] = useState([]);
+  const [listingsLoading, setListingsLoading] = useState(false);
+  const [listingSearch, setListingSearch] = useState('');
+  const [listingStatusFilter, setListingStatusFilter] = useState('all');
+  const [listingPagination, setListingPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0 });
 
   const showToast = (message) => setToast(message);
 
@@ -162,6 +169,51 @@ function AdminDashboard({ onLogout, user }) {
       showToast(error.message || 'Failed to create user');
     }
   };
+
+  // ─── Listings handlers ───────────────────────────────────────────────────────
+  const fetchListings = async () => {
+    setListingsLoading(true);
+    try {
+      const params = { page: listingPagination.page, limit: listingPagination.limit };
+      if (listingSearch) params.search = listingSearch;
+      if (listingStatusFilter !== 'all') params.status = listingStatusFilter;
+
+      const response = await adminListingsAPI.getAll(params);
+      if (response.success) {
+        setListings(response.data);
+        setListingPagination(response.pagination);
+      }
+    } catch (error) {
+      showToast(error.message || 'Failed to fetch listings');
+    } finally {
+      setListingsLoading(false);
+    }
+  };
+
+  const handleListingStatusChange = async (id, status) => {
+    try {
+      const response = await adminListingsAPI.updateStatus(id, status);
+      showToast(response.message || 'Status updated');
+      fetchListings();
+    } catch (error) {
+      showToast(error.message || 'Failed to update status');
+    }
+  };
+
+  const handleDeleteListing = async (id) => {
+    if (!window.confirm('Delete this listing? This cannot be undone.')) return;
+    try {
+      const response = await adminListingsAPI.delete(id);
+      showToast(response.message || 'Listing deleted');
+      fetchListings();
+    } catch (error) {
+      showToast(error.message || 'Failed to delete listing');
+    }
+  };
+
+  useEffect(() => {
+    if (tab === 'listings') fetchListings();
+  }, [tab, listingPagination.page, listingSearch, listingStatusFilter]);
 
   const NAV = [
     { id: 'overview', label: 'Overview', icon: <OverviewIcon /> },
@@ -359,10 +411,128 @@ function AdminDashboard({ onLogout, user }) {
           )}
 
           {tab === 'listings' && (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>
-              <ParkingIcon />
-              <h3 style={{ marginTop: 16, fontFamily: 'var(--font-display)' }}>Listings Management</h3>
-              <p>Listings management coming soon...</p>
+            <div className="table-card">
+              <div className="table-card-header" style={{ flexWrap: 'wrap', gap: 12 }}>
+                <span className="table-card-title">All Listings ({listingPagination.total})</span>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <input
+                    type="text"
+                    className="table-search"
+                    placeholder="Search listings or owner..."
+                    value={listingSearch}
+                    onChange={(e) => { setListingSearch(e.target.value); setListingPagination(p => ({ ...p, page: 1 })); }}
+                    style={{ width: 220 }}
+                  />
+                  <select
+                    className="form-select"
+                    value={listingStatusFilter}
+                    onChange={(e) => { setListingStatusFilter(e.target.value); setListingPagination(p => ({ ...p, page: 1 })); }}
+                    style={{ width: 140 }}
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              {listingsLoading ? (
+                <div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>Loading listings...</div>
+              ) : listings.length === 0 ? (
+                <div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>No listings found.</div>
+              ) : (
+                <>
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Owner</th>
+                        <th>Price / hr</th>
+                        <th>Slots</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {listings.map(l => (
+                        <tr key={l.id}>
+                          <td className="td-name">
+                            <div>{l.name}</div>
+                            <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>{l.address}</div>
+                          </td>
+                          <td>
+                            <div style={{ fontSize: 13 }}>{l.ownerFirstName} {l.ownerLastName}</div>
+                            <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>{l.ownerEmail}</div>
+                          </td>
+                          <td className="td-mono">₱{parseFloat(l.price_per_hour).toFixed(2)}</td>
+                          <td className="td-mono">{l.available_slots}/{l.total_slots}</td>
+                          <td>
+                            <span className={`badge ${
+                              l.status === 'active' ? 'badge-active' :
+                              l.status === 'pending' ? 'badge-pending' : 'badge-inactive'
+                            }`}>{l.status}</span>
+                          </td>
+                          <td className="td-mono">{formatDate(l.created_at)}</td>
+                          <td className="row-actions">
+                            {l.status === 'pending' && (
+                              <>
+                                <button
+                                  className="btn-edit"
+                                  onClick={() => handleListingStatusChange(l.id, 'active')}
+                                  title="Approve listing"
+                                >Approve</button>
+                                <button
+                                  className="btn-delete"
+                                  onClick={() => handleListingStatusChange(l.id, 'inactive')}
+                                  title="Reject listing"
+                                >Reject</button>
+                              </>
+                            )}
+                            {l.status === 'active' && (
+                              <button
+                                className="btn-delete"
+                                onClick={() => handleListingStatusChange(l.id, 'inactive')}
+                              >Deactivate</button>
+                            )}
+                            {l.status === 'inactive' && (
+                              <button
+                                className="btn-edit"
+                                onClick={() => handleListingStatusChange(l.id, 'active')}
+                              >Activate</button>
+                            )}
+                            <button
+                              className="btn-delete"
+                              onClick={() => handleDeleteListing(l.id)}
+                            >Delete</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {listingPagination.pages > 1 && (
+                    <div style={{ padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--muted)' }}>
+                        Page {listingPagination.page} of {listingPagination.pages} ({listingPagination.total} total)
+                      </span>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          className="btn-edit"
+                          disabled={listingPagination.page === 1}
+                          onClick={() => setListingPagination(p => ({ ...p, page: p.page - 1 }))}
+                        >Previous</button>
+                        <button
+                          className="btn-edit"
+                          disabled={listingPagination.page === listingPagination.pages}
+                          onClick={() => setListingPagination(p => ({ ...p, page: p.page + 1 }))}
+                        >Next</button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
 
