@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowseIcon } from '../components/Icons';
 import { INITIAL_LISTINGS } from '../data';
+import { listingsAPI, bookingsAPI, getUserFromToken } from '../services/api';
 
 function BrowseSpaces({ onBook, showToast }) {
-  const [spaces] = useState(INITIAL_LISTINGS.filter(l => l.status === 'active'));
+  const [spaces, setSpaces] = useState([]);
+
+  useEffect(() => {
+    listingsAPI.getAll().then(res => {
+      if (res.success) setSpaces(res.data);
+    }).catch(() => {});
+  }, []);
   const [search, setSearch] = useState('');
   const [selectedSpace, setSelectedSpace] = useState(null);
   const [bookingData, setBookingData] = useState({ date: '', time: '', duration: '' });
@@ -18,10 +25,22 @@ function BrowseSpaces({ onBook, showToast }) {
     setBookingData({ date: '', time: '', duration: '' });
   };
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     if (!bookingData.date || !bookingData.time || !bookingData.duration) {
       showToast('Please fill in all booking details');
       return;
+    }
+    try {
+      await bookingsAPI.create({
+        listing_id: selectedSpace.id,
+        booking_date: bookingData.date,
+        start_time: bookingData.time,
+        duration_hours: parseInt(bookingData.duration),
+      });
+      setSelectedSpace(null);
+      showToast('Booking request submitted successfully!');
+    } catch (err) {
+      showToast('Booking failed: ' + err.message);
     }
     
     const amount = selectedSpace.price * parseInt(bookingData.duration) || 0;
@@ -161,6 +180,5 @@ function BrowseSpaces({ onBook, showToast }) {
       )}
     </div>
   );
-}
-
+};
 export default BrowseSpaces;
