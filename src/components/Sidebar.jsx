@@ -1,18 +1,25 @@
 import React from 'react';
 import { DashboardIcon, BrowseIcon, ListSpaceIcon, MyBookingsIcon, ProfileIcon, LogoutIcon, UsersIcon } from './Icons';
 
-const NAV_ITEMS = [
+const DRIVER_NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
   { id: 'browse', label: 'Browse Spaces', icon: BrowseIcon },
-  { id: 'list-space', label: 'List Your Space', icon: ListSpaceIcon },
   { id: 'my-bookings', label: 'My Bookings', icon: MyBookingsIcon },
   { id: 'profile', label: 'Profile', icon: ProfileIcon },
 ];
 
-function Sidebar({ activeTab, onTabChange, onLogout, userName, isAdmin, onAdminUsers }) {
-  const items = isAdmin
-    ? [...NAV_ITEMS, { id: 'users', label: 'Users', icon: UsersIcon }]
-    : NAV_ITEMS;
+const OWNER_NAV = [
+  { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
+  { id: 'list-space', label: 'Add Listing', icon: ListSpaceIcon },
+  { id: 'my-bookings', label: 'Booking Requests', icon: MyBookingsIcon },
+  { id: 'profile', label: 'Profile', icon: ProfileIcon },
+];
+
+function Sidebar({ activeTab, onTabChange, onLogout, userName, isAdmin, userRole, onAdminUsers }) {
+const baseNav = userRole === 'owner' ? OWNER_NAV : DRIVER_NAV;
+const items = isAdmin
+  ? [...baseNav, { id: 'users', label: 'Users', icon: UsersIcon }]
+  : baseNav;
 
   return (
     <aside className="sidebar">
@@ -42,7 +49,9 @@ function Sidebar({ activeTab, onTabChange, onLogout, userName, isAdmin, onAdminU
           </div>
           <div className="sidebar-user-info">
             <span className="sidebar-user-name">{userName || 'User'}</span>
-            <span className="sidebar-user-role">Renter</span>
+            <span className="sidebar-user-role" style={{ textTransform: 'capitalize' }}>
+              {userRole || 'User'}
+            </span>
           </div>
         </div>
       </div>
