@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ListSpaceIcon, UploadIcon, PlusIcon, TrashIcon } from '../components/Icons';
+import { listingsAPI } from '../services/api';
 
 const areas = [
   'Apas',
@@ -144,12 +145,28 @@ function ListYourSpace({ onSubmit, showToast }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.address || !formData.area || !formData.slots || !formData.hourlyRate) {
+    if (!formData.name || !formData.address || !formData.slots || !formData.hourlyRate) {
       showToast('Please fill in all required fields');
       return;
+    }
+
+    try {
+      const result = await listingsAPI.create({
+        name: formData.name,
+        address: formData.address,
+        description: formData.description,
+        price_per_hour: parseFloat(formData.hourlyRate),
+        total_slots: parseInt(formData.slots),
+        amenities: formData.amenities,
+        rules: '',
+      });
+
+      showToast('Your parking space has been submitted for review!');
+      // reset form as before...
+    } catch (err) {
+      showToast('Failed to submit listing: ' + err.message);
     }
 
     const listingData = {
@@ -168,8 +185,7 @@ function ListYourSpace({ onSubmit, showToast }) {
     };
 
     onSubmit(listingData);
-    showToast('Your parking space has been submitted for review!');
-    
+
     // Reset form
     setFormData({
       name: '',
@@ -201,7 +217,7 @@ function ListYourSpace({ onSubmit, showToast }) {
       <div className="page-header">
         <div className="page-header-left">
           <ListSpaceIcon />
-          <h1 className="page-title">List Your Parking Space</h1>
+            <h1 className="page-title">List Your Parking Space</h1>
         </div>
         <div className="page-header-right">
           <span className="page-date">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
@@ -472,6 +488,5 @@ function ListYourSpace({ onSubmit, showToast }) {
       </div>
     </div>
   );
-}
-
+};
 export default ListYourSpace;
