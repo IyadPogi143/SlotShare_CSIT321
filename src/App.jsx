@@ -69,8 +69,8 @@ function App() {
       {page === "home" && <HomePage onLogin={() => setPage("login")} onSignup={() => setPage("signup")} />}
       {page === "login" && <LoginPage onLogin={handleLogin} onSignup={() => setPage("signup")} onBack={() => setPage("home")} />}
       {page === "signup" && <SignupPage onSignup={handleSignup} onLogin={() => setPage("login")} onBack={() => setPage("home")} />}
-  {page === "dashboard" && <UserDashboard onLogout={handleLogout} user={currentUser} isAdmin={currentUser?.role === 'admin'} onAdminUsers={() => setPage("admin")} />}
-  {page === "admin" && <AdminDashboard onLogout={handleLogout} user={currentUser} />}
+      {page === "dashboard" && <UserDashboard onLogout={handleLogout} user={currentUser} isAdmin={currentUser?.role === 'admin'} userRole={currentUser?.role} onAdminUsers={() => setPage("admin")} />}
+      {page === "admin" && <AdminDashboard onLogout={handleLogout} user={currentUser} />}
     </>
   );
 }
